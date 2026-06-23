@@ -1,11 +1,11 @@
 const mysql = require("mysql2/promise");
 
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "Mahmudd",
-  database: process.env.DB_NAME || "pos_angkringan",
+  host: process.env.DB_HOST || "db.mohtqykrgemqdnsmmtps.supabase.co",
+  port: Number(process.env.DB_PORT || 5432),
+  user: process.env.DB_USER || "postgres",
+  password: process.env.DB_PASSWORD || "pkugombong21",
+  database: process.env.DB_NAME || "postgres",
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
