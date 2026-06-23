@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       const user = data.user;
       const id = await generateId();
       await query(
-        "INSERT INTO users (id, nama, username, password, role) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO users (id, nama, username, password, role) VALUES ($1, $2, $3, $4, $5)",
         [id, user.nama, user.username, user.password, user.role || "Kasir"],
       );
       return Response.json({ success: true, user: { ...user, id } });
@@ -28,30 +28,36 @@ export async function POST(request: Request) {
 
     if (data.action === "update") {
       const { id, data: updateData } = data;
-      const fields: string[] = [];
-      const values: any[] = [];
+      const updateFields: Record<string, any> = {};
 
       for (const key of ["nama", "username", "password", "role"]) {
         if (Object.prototype.hasOwnProperty.call(updateData, key)) {
-          fields.push(`${key} = ?`);
-          values.push(updateData[key]);
+          updateFields[key] = updateData[key];
         }
       }
 
-      if (fields.length === 0) {
+      const fieldKeys = Object.keys(updateFields);
+      if (fieldKeys.length === 0) {
         return Response.json(
           { success: false, error: "No fields to update" },
           { status: 400 },
         );
       }
 
-      values.push(id);
-      await query(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`, values);
+      const setClauses = fieldKeys
+        .map((k, i) => `"${k}" = $${i + 1}`)
+        .join(", ");
+      const updateValues = Object.values(updateFields);
+      updateValues.push(id);
+      await query(
+        `UPDATE users SET ${setClauses} WHERE id = $${fieldKeys.length + 1}`,
+        updateValues,
+      );
       return Response.json({ success: true });
     }
 
     if (data.action === "delete") {
-      await query("DELETE FROM users WHERE id = ?", [data.id]);
+      await query("DELETE FROM users WHERE id = $1", [data.id]);
       return Response.json({ success: true, deleted: data.id });
     }
 

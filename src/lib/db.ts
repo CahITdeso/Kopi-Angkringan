@@ -1,41 +1,39 @@
-const mysql = require("mysql2/promise");
+const { Pool } = require("pg");
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || "db.mohtqykrgemqdnsmmtps.supabase.co",
+const pool = new Pool({
+  host: process.env.DB_HOST || "aws-1-ap-southeast-1.pooler.supabase.com",
   port: Number(process.env.DB_PORT || 5432),
-  user: process.env.DB_USER || "postgres",
+  user: process.env.DB_USER || "postgres.mohtqykrgemqdnsmmtps",
   password: process.env.DB_PASSWORD || "pkugombong21",
   database: process.env.DB_NAME || "postgres",
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 });
 
 export default pool;
 
 export async function query(sql: string, params?: any[]) {
   try {
-    const [results] = await pool.query(sql, params);
-    return results;
+    const result = await pool.query(sql, params);
+    return result.rows;
   } catch (error) {
     console.error("Database error:", error);
     throw error;
   }
 }
 
-// Soft delete ke database MySQL (tidak menghapus data, hanya menandai deleted_at)
 export async function softDelete(table: string, id: string): Promise<void> {
   try {
-    await query(`UPDATE ?? SET deleted_at = NOW() WHERE id = ?`, [table, id]);
+    await query(`UPDATE "${table}" SET is_deleted = 1 WHERE id = $1`, [id]);
   } catch (error) {
-    console.warn(
-      `Soft delete ke ${table} gagal (DB mungkin tidak aktif):`,
-      error,
-    );
+    console.warn(`Soft delete ke ${table} gagal:`, error);
   }
 }
 
-// Insert atau Update data ke database MySQL
 export async function upsertToDB(
   table: string,
   data: Record<string, any>,
@@ -44,16 +42,16 @@ export async function upsertToDB(
   try {
     const keys = Object.keys(data);
     const values = Object.values(data);
-    const placeholders = keys.map(() => "?").join(", ");
-    const updates = keys.map((k) => `\`${k}\` = VALUES(\`${k}\`)`).join(", ");
+    const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
+    const updates = keys.map((k) => `"${k}" = EXCLUDED."${k}"`).join(", ");
 
     await query(
-      `INSERT INTO \`${table}\` (${keys.map((k) => "`" + k + "`").join(", ")}) VALUES (${placeholders})
-       ON DUPLICATE KEY UPDATE ${updates}`,
+      `INSERT INTO "${table}" (${keys.map((k) => `"${k}"`).join(", ")}) VALUES (${placeholders})
+       ON CONFLICT ("${idField}") DO UPDATE SET ${updates}`,
       values,
     );
   } catch (error) {
-    console.warn(`Upsert ke ${table} gagal (DB mungkin tidak aktif):`, error);
+    console.warn(`Upsert ke ${table} gagal:`, error);
   }
 }
 

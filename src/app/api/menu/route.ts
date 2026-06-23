@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       const menu = data.menu;
       const id = await generateId();
       await query(
-        "INSERT INTO menu (id, nama_menu, kategori, harga, foto, is_deleted) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO menu (id, nama_menu, kategori, harga, foto, is_deleted) VALUES ($1, $2, $3, $4, $5, $6)",
         [id, menu.nama_menu, menu.kategori, menu.harga, menu.foto || "🍽️", 0],
       );
       return Response.json({
@@ -41,32 +41,39 @@ export async function POST(request: Request) {
       const fields: string[] = [];
       const values: any[] = [];
 
+      const updateFields: Record<string, any> = {};
       for (const key of ["nama_menu", "kategori", "harga", "foto"]) {
         if (Object.prototype.hasOwnProperty.call(updateData, key)) {
-          fields.push(`${key} = ?`);
-          values.push(updateData[key]);
+          updateFields[key] = updateData[key];
         }
       }
-
       if (Object.prototype.hasOwnProperty.call(updateData, "status")) {
-        fields.push(`is_deleted = ?`);
-        values.push(updateData.status === "Tidak Tersedia" ? 1 : 0);
+        updateFields.is_deleted =
+          updateData.status === "Tidak Tersedia" ? 1 : 0;
       }
 
-      if (fields.length === 0) {
+      const fieldKeys = Object.keys(updateFields);
+      if (fieldKeys.length === 0) {
         return Response.json(
           { success: false, error: "No fields to update" },
           { status: 400 },
         );
       }
 
-      values.push(id);
-      await query(`UPDATE menu SET ${fields.join(", ")} WHERE id = ?`, values);
+      const setClauses = fieldKeys
+        .map((k, i) => `"${k}" = $${i + 1}`)
+        .join(", ");
+      const updateValues = Object.values(updateFields);
+      updateValues.push(id);
+      await query(
+        `UPDATE menu SET ${setClauses} WHERE id = $${fieldKeys.length + 1}`,
+        updateValues,
+      );
       return Response.json({ success: true });
     }
 
     if (data.action === "delete") {
-      await query("UPDATE menu SET is_deleted = 1 WHERE id = ?", [data.id]);
+      await query("UPDATE menu SET is_deleted = 1 WHERE id = $1", [data.id]);
       return Response.json({ success: true, deleted: data.id });
     }
 

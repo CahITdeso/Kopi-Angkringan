@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     const id = await generateId();
 
     await query(
-      "INSERT INTO stok_log (id, menu_id, nama_menu, jenis, qty, tanggal, keterangan) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO stok_log (id, menu_id, nama_menu, jenis, qty, tanggal, keterangan) VALUES ($1, $2, $3, $4, $5, $6, $7)",
       [
         id,
         data.menu_id,

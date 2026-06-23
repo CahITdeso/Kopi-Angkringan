@@ -22,7 +22,7 @@ export async function GET(request: Request) {
       } else {
         startDate = new Date(now.getTime() - 30 * 86400000);
       }
-      sql = "SELECT * FROM transaksi WHERE tanggal >= ? ORDER BY tanggal DESC";
+      sql = "SELECT * FROM transaksi WHERE tanggal >= $1 ORDER BY tanggal DESC";
       params.push(formatDateForDB(startDate.toISOString()));
     }
 
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
     for (let t of transaksi) {
       const details: any = await query(
-        "SELECT * FROM detail_transaksi WHERE transaksi_id = ? AND is_deleted = 0",
+        "SELECT * FROM detail_transaksi WHERE transaksi_id = $1 AND is_deleted = 0",
         [t.id],
       );
       t.items = details;
@@ -52,10 +52,10 @@ export async function POST(request: Request) {
     const data = await request.json();
 
     if (data.action === "soft_delete") {
-      await query("DELETE FROM detail_transaksi WHERE transaksi_id = ?", [
+      await query("DELETE FROM detail_transaksi WHERE transaksi_id = $1", [
         data.id,
       ]);
-      await query("DELETE FROM transaksi WHERE id = ?", [data.id]);
+      await query("DELETE FROM transaksi WHERE id = $1", [data.id]);
       return Response.json({ success: true, deleted: data.id });
     }
 
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     const customerName = data.customerName || data.customer_name || null;
 
     await query(
-      "INSERT INTO transaksi (id, tanggal, total, diskon, pajak, metode_bayar, user_id, customer_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO transaksi (id, tanggal, total, diskon, pajak, metode_bayar, user_id, customer_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
       [
         id,
         tanggalDB,
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     for (const item of data.items || []) {
       const detailId = await generateId();
       await query(
-        "INSERT INTO detail_transaksi (id, transaksi_id, menu_id, nama_menu, qty, harga, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO detail_transaksi (id, transaksi_id, menu_id, nama_menu, qty, harga, subtotal) VALUES ($1, $2, $3, $4, $5, $6, $7)",
         [
           detailId,
           id,
