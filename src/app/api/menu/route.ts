@@ -10,7 +10,7 @@ function normalizeMenuRow(row: any) {
 export async function GET() {
   try {
     const menu = await query(
-      "SELECT id, nama_menu, kategori, harga, foto, is_deleted FROM menu WHERE is_deleted = 0 ORDER BY nama_menu ASC",
+      "SELECT id, nama_menu, kategori, harga, foto, is_deleted FROM menu WHERE is_deleted = false ORDER BY nama_menu ASC",
     );
     return Response.json(Array.isArray(menu) ? menu.map(normalizeMenuRow) : []);
   } catch (error) {
@@ -28,7 +28,14 @@ export async function POST(request: Request) {
       const id = await generateId();
       await query(
         "INSERT INTO menu (id, nama_menu, kategori, harga, foto, is_deleted) VALUES ($1, $2, $3, $4, $5, $6)",
-        [id, menu.nama_menu, menu.kategori, menu.harga, menu.foto || "🍽️", 0],
+        [
+          id,
+          menu.nama_menu,
+          menu.kategori,
+          menu.harga,
+          menu.foto || "🍽️",
+          false,
+        ],
       );
       return Response.json({
         success: true,
@@ -49,7 +56,7 @@ export async function POST(request: Request) {
       }
       if (Object.prototype.hasOwnProperty.call(updateData, "status")) {
         updateFields.is_deleted =
-          updateData.status === "Tidak Tersedia" ? 1 : 0;
+          updateData.status === "Tidak Tersedia" ? true : false;
       }
 
       const fieldKeys = Object.keys(updateFields);
@@ -73,7 +80,7 @@ export async function POST(request: Request) {
     }
 
     if (data.action === "delete") {
-      await query("UPDATE menu SET is_deleted = 1 WHERE id = $1", [data.id]);
+      await query("UPDATE menu SET is_deleted = true WHERE id = $1", [data.id]);
       return Response.json({ success: true, deleted: data.id });
     }
 

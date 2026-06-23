@@ -12,18 +12,17 @@ export default function AppLayoutClient({
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-angkringan-dark">
-        <div className="text-center">
-          <span className="text-6xl animate-bounce block mb-4">🏮</span>
-          <p className="text-angkringan-gold text-lg">Memuat...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!user) {
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-angkringan-dark">
+          <div className="text-center">
+            <span className="text-6xl animate-bounce block mb-4">🏮</span>
+            <p className="text-angkringan-gold text-lg">Memuat...</p>
+          </div>
+        </div>
+      );
+    }
     return <>{children}</>;
   }
 

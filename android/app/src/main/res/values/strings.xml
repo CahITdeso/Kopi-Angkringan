@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">POS Angkringan</string>
-    <string name="title_activity_main">POS Angkringan</string>
-    <string name="package_name">com.angkringan.pos</string>
-    <string name="custom_url_scheme">com.angkringan.pos</string>
-</resources>

@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
     for (let t of transaksi) {
       const details: any = await query(
-        "SELECT * FROM detail_transaksi WHERE transaksi_id = $1 AND is_deleted = 0",
+        "SELECT * FROM detail_transaksi WHERE transaksi_id = $1 AND is_deleted = false",
         [t.id],
       );
       t.items = details;
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     for (const item of data.items || []) {
       const detailId = await generateId();
       await query(
-        "INSERT INTO detail_transaksi (id, transaksi_id, menu_id, nama_menu, qty, harga, subtotal) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        "INSERT INTO detail_transaksi (id, transaksi_id, menu_id, nama_menu, qty, harga, subtotal, customer_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
         [
           detailId,
           id,
@@ -89,6 +89,7 @@ export async function POST(request: Request) {
           item.qty,
           item.harga,
           item.subtotal,
+          customerName,
         ],
       );
     }

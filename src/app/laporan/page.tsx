@@ -332,42 +332,45 @@ export default function LaporanPage() {
         : "🖨️ Cetak Kas";
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-6xl mx-auto px-1 sm:px-0 space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-gradient">📈 Laporan</h1>
-          <p className="text-angkringan-light/60">
+          <h1 className="text-xl font-bold text-angkringan-gold">📈 Laporan</h1>
+          <p className="text-[11px] sm:text-sm text-angkringan-light/60">
             Analisis bisnis warung angkringan
           </p>
         </div>
-        <button onClick={exportPDF} className="btn-primary">
+        <button
+          onClick={exportPDF}
+          className="btn-primary text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2"
+        >
           {labelCetak}
         </button>
       </div>
 
       {/* Date Range */}
-      <div className="flex flex-wrap gap-3 items-end">
-        <div>
-          <label className="block text-xs text-angkringan-light/60 mb-1">
-            Dari Tanggal
+      <div className="flex flex-wrap gap-2 sm:gap-3 items-end">
+        <div className="w-[42%] sm:w-auto">
+          <label className="block text-[10px] sm:text-xs text-angkringan-light/60 mb-0.5 sm:mb-1">
+            Dari
           </label>
           <input
             type="date"
             value={tempDateStart}
             onChange={(e) => setTempDateStart(e.target.value)}
-            className="input-field text-sm py-2 w-40"
+            className="input-field text-xs sm:text-sm py-1.5 sm:py-2 w-full sm:w-40"
           />
         </div>
-        <div>
-          <label className="block text-xs text-angkringan-light/60 mb-1">
-            Sampai Tanggal
+        <div className="w-[42%] sm:w-auto">
+          <label className="block text-[10px] sm:text-xs text-angkringan-light/60 mb-0.5 sm:mb-1">
+            Sampai
           </label>
           <input
             type="date"
             value={tempDateEnd}
             onChange={(e) => setTempDateEnd(e.target.value)}
-            className="input-field text-sm py-2 w-40"
+            className="input-field text-xs sm:text-sm py-1.5 sm:py-2 w-full sm:w-40"
           />
         </div>
         <button
@@ -375,33 +378,37 @@ export default function LaporanPage() {
             setDateStart(tempDateStart);
             setDateEnd(tempDateEnd);
           }}
-          className="btn-primary h-[42px]"
+          className="btn-primary text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 h-[34px] sm:h-[42px]"
         >
-          🔍 Search
+          🔍 Cari
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="card bg-gradient-to-br from-green-700 to-green-900 border-none">
-          <p className="text-sm text-white/70">Total Penjualan</p>
-          <p className="text-2xl font-bold text-white mt-1">
-            {formatRupiah(totalPenjualan)}
-          </p>
+      {/* Summary Cards - Sembunyikan saat tab kas */}
+      {tab !== "kas" && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="card bg-gradient-to-br from-green-700 to-green-900 border-none">
+            <p className="text-sm text-white/70">Total Penjualan</p>
+            <p className="text-2xl font-bold text-white mt-1">
+              {formatRupiah(totalPenjualan)}
+            </p>
+          </div>
+          <div className="card bg-gradient-to-br from-blue-700 to-blue-900 border-none">
+            <p className="text-sm text-white/70">Jumlah Transaksi</p>
+            <p className="text-2xl font-bold text-white mt-1">
+              {totalTransaksi}
+            </p>
+          </div>
+          <div className="card bg-gradient-to-br from-angkringan-primary to-angkringan-secondary border-none">
+            <p className="text-sm text-white/70">Rata-rata Transaksi</p>
+            <p className="text-2xl font-bold text-white mt-1">
+              {totalTransaksi > 0
+                ? formatRupiah(Math.round(totalPenjualan / totalTransaksi))
+                : "Rp 0"}
+            </p>
+          </div>
         </div>
-        <div className="card bg-gradient-to-br from-blue-700 to-blue-900 border-none">
-          <p className="text-sm text-white/70">Jumlah Transaksi</p>
-          <p className="text-2xl font-bold text-white mt-1">{totalTransaksi}</p>
-        </div>
-        <div className="card bg-gradient-to-br from-angkringan-primary to-angkringan-secondary border-none">
-          <p className="text-sm text-white/70">Rata-rata Transaksi</p>
-          <p className="text-2xl font-bold text-white mt-1">
-            {totalTransaksi > 0
-              ? formatRupiah(Math.round(totalPenjualan / totalTransaksi))
-              : "Rp 0"}
-          </p>
-        </div>
-      </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-angkringan-primary/30 pb-2">
@@ -431,57 +438,119 @@ export default function LaporanPage() {
               Belum ada transaksi
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-angkringan-light/60 border-b border-angkringan-primary/30">
-                    <th className="text-left p-2">Waktu</th>
-                    <th className="text-left p-2">Pelanggan</th>
-                    <th className="text-left p-2">Kasir</th>
-                    <th className="text-left p-2">Metode</th>
-                    <th className="text-right p-2">Total</th>
-                    <th className="text-center p-2">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transaksiList.map((t) => {
-                    const kasir = users.find((u) => u.id === t.user_id);
-                    return (
-                      <tr
-                        key={t.id}
-                        className="border-b border-angkringan-primary/10 hover:bg-angkringan-primary/10"
-                      >
-                        <td className="p-2 text-angkringan-light/80 text-xs whitespace-nowrap">
-                          {formatTanggalShort(t.tanggal)}
-                        </td>
-                        <td className="p-2 text-xs text-angkringan-light/80">
-                          {t.customerName || "-"}
-                        </td>
-                        <td className="p-2 text-xs text-angkringan-light/80">
-                          {kasir ? kasir.nama : t.user_id}
-                        </td>
-                        <td className="p-2">
-                          <span className="badge bg-angkringan-primary/30 text-angkringan-gold text-xs">
+            <>
+              {/* Mobile: Card Layout */}
+              <div className="grid grid-cols-1 gap-2 sm:hidden">
+                {transaksiList.map((t) => {
+                  const kasir = users.find((u) => u.id === t.user_id);
+                  return (
+                    <div
+                      key={t.id}
+                      className="bg-angkringan-dark/60 rounded-xl p-3 border border-angkringan-primary/10 active:scale-[0.98] transition-transform"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="text-xs text-angkringan-light/60 font-mono">
+                            {formatTanggalShort(t.tanggal)}
+                          </p>
+                          <p className="text-xs text-angkringan-light/80 mt-0.5">
+                            {t.customerName || "Walk-in"}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0 ml-2">
+                          <p className="text-sm font-bold text-angkringan-accent">
+                            {formatRupiah(t.total)}
+                          </p>
+                          <span className="inline-block mt-0.5 text-[9px] px-1.5 py-0.5 rounded bg-angkringan-primary/30 text-angkringan-gold">
                             {t.metode_bayar}
                           </span>
-                        </td>
-                        <td className="p-2 text-right font-semibold text-angkringan-accent">
-                          {formatRupiah(t.total)}
-                        </td>
-                        <td className="p-2 text-center">
-                          <button
-                            onClick={() => setDetailTransaksi(t)}
-                            className="text-xs px-3 py-1.5 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-600/30 hover:bg-blue-600/30"
-                          >
-                            📋 Detail
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-1.5 border-t border-angkringan-primary/10">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-angkringan-light/50">
+                            Kasir:
+                          </span>
+                          <span className="text-[10px] text-angkringan-light/80 font-medium truncate max-w-[120px]">
+                            {kasir ? kasir.nama : t.user_id}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => setDetailTransaksi(t)}
+                          className="text-[10px] px-2.5 py-1 bg-blue-600/15 text-blue-400 rounded-lg border border-blue-600/20 active:bg-blue-600/30 transition-colors"
+                        >
+                          📋 Detail
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Desktop: Table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="min-w-full table-fixed text-sm">
+                  <colgroup>
+                    <col className="w-[130px]" />
+                    <col className="w-[100px]" />
+                    <col className="w-[100px]" />
+                    <col className="w-[80px]" />
+                    <col className="w-[110px]" />
+                    <col className="w-[70px]" />
+                  </colgroup>
+                  <thead>
+                    <tr className="text-angkringan-light/60 border-b border-angkringan-primary/30">
+                      <th className="text-left p-2 text-xs">Waktu</th>
+                      <th className="text-left p-2 text-xs truncate">
+                        Pelanggan
+                      </th>
+                      <th className="text-left p-2 text-xs truncate">Kasir</th>
+                      <th className="text-left p-2 text-xs">Metode</th>
+                      <th className="text-right p-2 text-xs whitespace-nowrap">
+                        Total
+                      </th>
+                      <th className="text-center p-2 text-xs">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transaksiList.map((t) => {
+                      const kasir = users.find((u) => u.id === t.user_id);
+                      return (
+                        <tr
+                          key={t.id}
+                          className="border-b border-angkringan-primary/10 hover:bg-angkringan-primary/10"
+                        >
+                          <td className="p-2 text-angkringan-light/80 text-xs whitespace-nowrap">
+                            {formatTanggalShort(t.tanggal)}
+                          </td>
+                          <td className="p-2 text-xs text-angkringan-light/80 truncate max-w-[100px]">
+                            {t.customerName || "-"}
+                          </td>
+                          <td className="p-2 text-xs text-angkringan-light/80 truncate max-w-[100px]">
+                            {kasir ? kasir.nama : t.user_id}
+                          </td>
+                          <td className="p-2">
+                            <span className="bg-angkringan-primary/30 text-angkringan-gold text-xs px-2 py-0.5 rounded whitespace-nowrap">
+                              {t.metode_bayar}
+                            </span>
+                          </td>
+                          <td className="p-2 text-right font-semibold text-angkringan-accent whitespace-nowrap">
+                            {formatRupiah(t.total)}
+                          </td>
+                          <td className="p-2 text-center whitespace-nowrap">
+                            <button
+                              onClick={() => setDetailTransaksi(t)}
+                              className="text-lg px-2.5 py-1 bg-blue-600/20 text-blue-400 rounded hover:bg-blue-600/30"
+                            >
+                              📋
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -624,37 +693,68 @@ export default function LaporanPage() {
               Belum ada data penjualan
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-angkringan-light/60 border-b border-angkringan-primary/30">
-                    <th className="text-left p-2">#</th>
-                    <th className="text-left p-2">Menu</th>
-                    <th className="text-right p-2">Terjual</th>
-                    <th className="text-right p-2">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topMenu.map(([id, data], idx) => (
-                    <tr
-                      key={id}
-                      className="border-b border-angkringan-primary/10 hover:bg-angkringan-primary/10"
-                    >
-                      <td className="p-2 text-angkringan-gold font-bold">
-                        {idx + 1}
-                      </td>
-                      <td className="p-2 text-angkringan-light">{data.nama}</td>
-                      <td className="p-2 text-right text-angkringan-accent font-semibold">
-                        {data.qty}
-                      </td>
-                      <td className="p-2 text-right text-angkringan-accent">
+            <>
+              {/* Mobile: Card Layout */}
+              <div className="grid grid-cols-1 gap-2 sm:hidden">
+                {topMenu.map(([id, data], idx) => (
+                  <div
+                    key={id}
+                    className="flex items-center gap-3 bg-angkringan-dark/60 rounded-xl p-3 border border-angkringan-primary/10"
+                  >
+                    <span className="text-angkringan-gold font-bold text-sm w-6 text-center">
+                      {idx + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-angkringan-light truncate">
+                        {data.nama}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-xs font-bold text-angkringan-accent">
                         {formatRupiah(data.total)}
-                      </td>
+                      </p>
+                      <p className="text-[9px] text-angkringan-light/60">
+                        {data.qty} terjual
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Desktop: Table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-angkringan-light/60 border-b border-angkringan-primary/30">
+                      <th className="text-left p-2">#</th>
+                      <th className="text-left p-2">Menu</th>
+                      <th className="text-right p-2">Terjual</th>
+                      <th className="text-right p-2">Total</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {topMenu.map(([id, data], idx) => (
+                      <tr
+                        key={id}
+                        className="border-b border-angkringan-primary/10 hover:bg-angkringan-primary/10"
+                      >
+                        <td className="p-2 text-angkringan-gold font-bold text-xs">
+                          {idx + 1}
+                        </td>
+                        <td className="p-2 text-angkringan-light text-xs truncate max-w-[150px]">
+                          {data.nama}
+                        </td>
+                        <td className="p-2 text-right text-angkringan-accent font-semibold text-xs whitespace-nowrap">
+                          {data.qty}
+                        </td>
+                        <td className="p-2 text-right text-angkringan-accent text-xs whitespace-nowrap">
+                          {formatRupiah(data.total)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -730,52 +830,44 @@ export default function LaporanPage() {
                 Belum ada data kas
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-angkringan-light/60 border-b border-angkringan-primary/30">
-                      <th className="text-left p-2">Tanggal</th>
-                      <th className="text-left p-2">Keterangan</th>
-                      <th className="text-left p-2">Jenis</th>
-                      <th className="text-right p-2">Jumlah</th>
-                      <th className="text-center p-2">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allEntries.map((entry) => (
-                      <tr
-                        key={entry.id}
-                        className="border-b border-angkringan-primary/10 hover:bg-angkringan-primary/10"
-                      >
-                        <td className="p-2 text-xs text-angkringan-light/80 whitespace-nowrap">
+              <>
+                {/* Mobile: Kartu */}
+                <div className="grid grid-cols-1 gap-2 sm:hidden">
+                  {allEntries.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="bg-angkringan-dark/60 rounded-xl p-3 border border-angkringan-primary/10"
+                    >
+                      <div className="flex items-start justify-between mb-1.5">
+                        <span className="text-[10px] text-angkringan-light/60 font-mono">
                           {formatTanggalShort(entry.tanggal)}
-                        </td>
-                        <td className="p-2 text-angkringan-light text-xs">
-                          {entry.keterangan.length > 40
-                            ? entry.keterangan.substring(0, 40) + "..."
-                            : entry.keterangan}
-                        </td>
-                        <td className="p-2">
+                        </span>
+                        <span
+                          className={`text-xs font-bold whitespace-nowrap flex-shrink-0 ml-2 ${entry.jenis === "Pemasukan" ? "text-green-400" : "text-red-400"}`}
+                        >
+                          {entry.jenis === "Pemasukan" ? "+" : "-"}
+                          {formatRupiah(entry.jumlah)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-angkringan-light/80 truncate mb-2">
+                        {entry.keterangan}
+                      </p>
+                      <div className="flex items-center justify-between pt-1.5 border-t border-angkringan-primary/10">
+                        <div className="flex items-center gap-1">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${entry.jenis === "Pemasukan" ? "bg-green-600/20 text-green-400 border border-green-600/30" : "bg-red-600/20 text-red-400 border border-red-600/30"}`}
+                            className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${entry.jenis === "Pemasukan" ? "bg-green-600/20 text-green-400" : "bg-red-600/20 text-red-400"}`}
                           >
                             {entry.jenis === "Pemasukan"
                               ? "📈 Masuk"
                               : "📉 Keluar"}
                           </span>
                           {entry.sumber === "pos" && (
-                            <span className="ml-1 text-[9px] text-angkringan-light/30">
+                            <span className="text-[9px] text-angkringan-light/30">
                               POS
                             </span>
                           )}
-                        </td>
-                        <td
-                          className={`p-2 text-right font-bold ${entry.jenis === "Pemasukan" ? "text-green-400" : "text-red-400"}`}
-                        >
-                          {entry.jenis === "Pemasukan" ? "+" : "-"}
-                          {formatRupiah(entry.jumlah)}
-                        </td>
-                        <td className="p-2 text-center">
+                        </div>
+                        <div className="flex gap-1">
                           {entry.sumber === "pos" && (
                             <button
                               onClick={() => {
@@ -784,8 +876,7 @@ export default function LaporanPage() {
                                 );
                                 if (t) setDetailTransaksi(t);
                               }}
-                              className="text-angkringan-accent hover:text-angkringan-gold text-xs px-2 py-1 rounded hover:bg-angkringan-accent/20"
-                              title="Lihat detail"
+                              className="text-[10px] px-2.5 py-1 bg-blue-600/15 text-blue-400 rounded-lg border border-blue-600/20 active:bg-blue-600/30"
                             >
                               📋
                             </button>
@@ -793,17 +884,100 @@ export default function LaporanPage() {
                           {entry.sumber === "manual" && (
                             <button
                               onClick={() => setDeleteConfirm(entry.id)}
-                              className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded hover:bg-red-900/30"
+                              className="text-[10px] px-2.5 py-1 bg-red-600/15 text-red-400 rounded-lg border border-red-600/20 active:bg-red-600/30"
                             >
                               🗑️
                             </button>
                           )}
-                        </td>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop: Tabel */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="min-w-full table-fixed text-sm">
+                    <colgroup>
+                      <col className="w-[130px]" />
+                      <col className="w-auto" />
+                      <col className="w-[100px]" />
+                      <col className="w-[110px]" />
+                      <col className="w-[50px]" />
+                    </colgroup>
+                    <thead>
+                      <tr className="text-angkringan-light/60 border-b border-angkringan-primary/30">
+                        <th className="text-left p-2 text-xs">Tanggal</th>
+                        <th className="text-left p-2 text-xs">Keterangan</th>
+                        <th className="text-left p-2 text-xs">Jenis</th>
+                        <th className="text-right p-2 text-xs whitespace-nowrap">
+                          Jumlah
+                        </th>
+                        <th className="text-center p-2 text-xs">Aksi</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {allEntries.map((entry) => (
+                        <tr
+                          key={entry.id}
+                          className="border-b border-angkringan-primary/10 hover:bg-angkringan-primary/10"
+                        >
+                          <td className="p-2 text-xs text-angkringan-light/80 whitespace-nowrap">
+                            {formatTanggalShort(entry.tanggal)}
+                          </td>
+                          <td className="p-2 text-angkringan-light text-xs truncate max-w-[120px]">
+                            {entry.keterangan.length > 40
+                              ? entry.keterangan.substring(0, 40) + "..."
+                              : entry.keterangan}
+                          </td>
+                          <td className="p-2 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold ${entry.jenis === "Pemasukan" ? "bg-green-600/20 text-green-400" : "bg-red-600/20 text-red-400"}`}
+                            >
+                              {entry.jenis === "Pemasukan"
+                                ? "📈 Masuk"
+                                : "📉 Keluar"}
+                            </span>
+                            {entry.sumber === "pos" && (
+                              <span className="ml-1 text-xs text-angkringan-light/30">
+                                POS
+                              </span>
+                            )}
+                          </td>
+                          <td
+                            className={`p-2 text-right font-bold text-xs whitespace-nowrap ${entry.jenis === "Pemasukan" ? "text-green-400" : "text-red-400"}`}
+                          >
+                            {entry.jenis === "Pemasukan" ? "+" : "-"}
+                            {formatRupiah(entry.jumlah)}
+                          </td>
+                          <td className="p-2 text-center whitespace-nowrap">
+                            {entry.sumber === "pos" && (
+                              <button
+                                onClick={() => {
+                                  const t = transaksiList.find(
+                                    (x) => x.id === entry.id,
+                                  );
+                                  if (t) setDetailTransaksi(t);
+                                }}
+                                className="text-lg px-2.5 py-1 bg-blue-600/20 text-blue-400 rounded hover:bg-blue-600/30"
+                              >
+                                📋
+                              </button>
+                            )}
+                            {entry.sumber === "manual" && (
+                              <button
+                                onClick={() => setDeleteConfirm(entry.id)}
+                                className="text-red-400 hover:text-red-300 text-xs px-1.5 py-0.5 rounded"
+                              >
+                                🗑️
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
 

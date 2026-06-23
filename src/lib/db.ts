@@ -28,7 +28,7 @@ export async function query(sql: string, params?: any[]) {
 
 export async function softDelete(table: string, id: string): Promise<void> {
   try {
-    await query(`UPDATE "${table}" SET is_deleted = 1 WHERE id = $1`, [id]);
+    await query(`UPDATE "${table}" SET is_deleted = true WHERE id = $1`, [id]);
   } catch (error) {
     console.warn(`Soft delete ke ${table} gagal:`, error);
   }

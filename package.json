@@ -9,9 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@capacitor/android": "^8.4.1",
-    "@capacitor/cli": "^7.6.7",
-    "@capacitor/core": "^8.4.1",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.0",
     "mysql2": "^3.22.3",

@@ -91,7 +91,7 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gradient">
+          <h1 className="text-xl font-bold text-angkringan-gold">
             👥 Manajemen User
           </h1>
           <p className="text-angkringan-light/60 text-sm mt-1">
