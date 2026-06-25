@@ -1,6 +1,7 @@
 import React from "react";
 import { AuthProvider } from "@/context/AuthContext";
 import AppLayoutClient from "@/components/AppLayoutClient";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 export default function RootLayout({
@@ -19,6 +20,7 @@ export default function RootLayout({
         <AuthProvider>
           <AppLayoutClient>{children}</AppLayoutClient>
         </AuthProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
