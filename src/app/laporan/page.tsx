@@ -47,10 +47,6 @@ export default function LaporanPage() {
     null,
   );
 
-  useEffect(() => {
-    loadData();
-  }, [dateStart, dateEnd]);
-
   const loadData = useCallback(async () => {
     try {
       const [dbTransaksi, dbUsers] = await Promise.all([
@@ -70,6 +66,10 @@ export default function LaporanPage() {
       setUsers([]);
     }
   }, [dateStart, dateEnd]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const totalPenjualan = transaksiList.reduce((sum, t) => sum + t.total, 0);
   const totalTransaksi = transaksiList.length;
