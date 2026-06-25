@@ -226,6 +226,159 @@ export async function getTransaksi(): Promise<Transaksi[]> {
   }
 }
 
+/**
+ * Optimized: Fetch transaksi with server-side filtering, JOIN, and LIMIT.
+ * Returns transaksi with items already embedded (no N+1 queries).
+ */
+export async function getTransaksiOptimized(options?: {
+  dateStart?: string;
+  dateEnd?: string;
+  limit?: number;
+  periode?: string;
+}): Promise<Transaksi[]> {
+  try {
+    const params = new URLSearchParams();
+    if (options?.dateStart) params.set("date_start", options.dateStart);
+    if (options?.dateEnd) params.set("date_end", options.dateEnd);
+    if (options?.limit) params.set("limit", String(options.limit));
+    if (options?.periode) params.set("periode", options.periode);
+
+    const url = `/api/transaksi${params.toString() ? "?" + params.toString() : ""}`;
+    const transaksi = await fetchJson<Transaksi[]>(url);
+    return Array.isArray(transaksi) ? transaksi : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Fetch summary data for dashboard: total penjualan hari ini, jumlah transaksi hari ini,
+ * menu terlaris, and ringkasan pembayaran.
+ */
+export async function getDashboardSummary(): Promise<{
+  penjualanHariIni: number;
+  jumlahTransaksiHariIni: number;
+  menuTersedia: number;
+  totalMenu: number;
+  penjualan7Hari: { label: string; total: number; count: number }[];
+  menuTerlaris: { nama: string; qty: number; total: number }[];
+  paymentMethods: Record<string, number>;
+  ringkasan: {
+    totalPendapatan: number;
+    totalTransaksi: number;
+    rataRata: number;
+  };
+  transaksiTerbaru: Transaksi[];
+}> {
+  const today = new Date().toISOString().split("T")[0];
+
+  // Get today's transactions with items embedded (single query)
+  const transaksiHariIni = await getTransaksiOptimized({
+    dateStart: today,
+    limit: 100,
+  });
+
+  // Get last 7 days for chart
+  const last7Start = new Date();
+  last7Start.setDate(last7Start.getDate() - 6);
+  const transaksi7Hari = await getTransaksiOptimized({
+    dateStart: last7Start.toISOString().split("T")[0],
+    dateEnd: today,
+    limit: 500,
+  });
+
+  // Get all transactions for ringkasan (last 30 days max, with limit)
+  const transaksiRingkasan = await getTransaksiOptimized({
+    limit: 1000,
+    periode: "bulanan",
+  });
+
+  // Get menu count
+  const menuData = await getMenu();
+
+  // Process data
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const penjualanHariIni = transaksiHariIni.reduce((s, t) => s + t.total, 0);
+  const jumlahTransaksiHariIni = transaksiHariIni.length;
+
+  // 7 days chart (use transaksi7Hari)
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    d.setHours(0, 0, 0, 0);
+    const next = new Date(d);
+    next.setDate(next.getDate() + 1);
+    const total = transaksi7Hari
+      .filter((t) => {
+        const tgl = new Date(t.tanggal);
+        return tgl >= d && tgl < next;
+      })
+      .reduce((sum, t) => sum + t.total, 0);
+    const count = transaksi7Hari.filter((t) => {
+      const tgl = new Date(t.tanggal);
+      return tgl >= d && tgl < next;
+    }).length;
+    return {
+      label: d.toLocaleDateString("id-ID", { weekday: "short" }),
+      total,
+      count,
+    };
+  });
+
+  // Menu terlaris
+  const menuSales: Record<
+    string,
+    { nama: string; qty: number; total: number }
+  > = {};
+  transaksiRingkasan.forEach((t) => {
+    t.items?.forEach((item: any) => {
+      if (menuSales[item.menu_id]) {
+        menuSales[item.menu_id].qty += item.qty;
+        menuSales[item.menu_id].total += item.subtotal;
+      } else {
+        menuSales[item.menu_id] = {
+          nama: item.nama_menu,
+          qty: item.qty,
+          total: item.subtotal,
+        };
+      }
+    });
+  });
+  const menuTerlaris = Object.values(menuSales)
+    .sort((a, b) => b.qty - a.qty)
+    .slice(0, 5);
+
+  // Payment methods
+  const paymentMethods: Record<string, number> = {};
+  transaksiHariIni.forEach((t) => {
+    paymentMethods[t.metode_bayar] =
+      (paymentMethods[t.metode_bayar] || 0) + t.total;
+  });
+
+  // Ringkasan
+  const totalPendapatan = transaksiRingkasan.reduce((s, t) => s + t.total, 0);
+  const totalTransaksi = transaksiRingkasan.length;
+  const rataRata =
+    totalTransaksi > 0 ? Math.round(totalPendapatan / totalTransaksi) : 0;
+
+  // Recent transactions (10 latest)
+  const transaksiTerbaru = transaksiHariIni.slice(0, 10);
+
+  return {
+    penjualanHariIni,
+    jumlahTransaksiHariIni,
+    menuTersedia: menuData.filter((m: any) => m.status === "Tersedia").length,
+    totalMenu: menuData.length,
+    penjualan7Hari: last7Days,
+    menuTerlaris,
+    paymentMethods,
+    ringkasan: { totalPendapatan, totalTransaksi, rataRata },
+    transaksiTerbaru,
+  };
+}
+
 export async function getTransaksiByPeriode(
   periode: string,
 ): Promise<Transaksi[]> {

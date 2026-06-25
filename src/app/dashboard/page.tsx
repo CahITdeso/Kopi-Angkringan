@@ -2,92 +2,51 @@
 
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getTransaksi, getMenu, formatRupiah } from "@/lib/data";
+import { getDashboardSummary, formatRupiah } from "@/lib/data";
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [transaksi, setTransaksi] = React.useState<any[]>([]);
-  const [menu, setMenu] = React.useState<any[]>([]);
+  const [data, setData] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     const loadData = async () => {
-      const [transaksiData, menuData] = await Promise.all([
-        getTransaksi(),
-        getMenu(),
-      ]);
-      setTransaksi(transaksiData);
-      setMenu(menuData);
+      setLoading(true);
+      const summary = await getDashboardSummary();
+      setData(summary);
+      setLoading(false);
     };
 
     loadData();
   }, []);
 
-  // Data hari ini
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const transaksiHarian = transaksi.filter((t) => new Date(t.tanggal) >= today);
-  const totalPenjualan = transaksiHarian.reduce((sum, t) => sum + t.total, 0);
-  const jumlahTransaksi = transaksiHarian.length;
+  if (loading || !data) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin text-4xl mb-4">⏳</div>
+          <p className="text-angkringan-light/60">Memuat data dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Data 7 hari terakhir untuk grafik
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    d.setHours(0, 0, 0, 0);
-    const next = new Date(d);
-    next.setDate(next.getDate() + 1);
-    const total = transaksi
-      .filter((t) => {
-        const tgl = new Date(t.tanggal);
-        return tgl >= d && tgl < next;
-      })
-      .reduce((sum, t) => sum + t.total, 0);
-    const count = transaksi.filter((t) => {
-      const tgl = new Date(t.tanggal);
-      return tgl >= d && tgl < next;
-    }).length;
-    return {
-      label: d.toLocaleDateString("id-ID", { weekday: "short" }),
-      total,
-      count,
-      date: d,
-    };
-  });
-  const maxTotal = Math.max(...last7Days.map((d) => d.total), 1);
+  const {
+    penjualanHariIni,
+    jumlahTransaksiHariIni,
+    menuTersedia,
+    totalMenu,
+    penjualan7Hari,
+    menuTerlaris,
+    paymentMethods,
+    ringkasan,
+    transaksiTerbaru,
+  } = data;
 
-  // Menu terlaris
-  const menuSales: Record<
-    string,
-    { nama: string; qty: number; total: number }
-  > = {};
-  transaksi.forEach((t) => {
-    t.items?.forEach((item: any) => {
-      if (menuSales[item.menu_id]) {
-        menuSales[item.menu_id].qty += item.qty;
-        menuSales[item.menu_id].total += item.subtotal;
-      } else {
-        menuSales[item.menu_id] = {
-          nama: item.nama_menu,
-          qty: item.qty,
-          total: item.subtotal,
-        };
-      }
-    });
-  });
-  const topMenu = Object.values(menuSales)
-    .sort((a, b) => b.qty - a.qty)
-    .slice(0, 5);
-  const maxQty = Math.max(...topMenu.map((m) => m.qty), 1);
-
-  // Metode pembayaran
-  const paymentMethods: Record<string, number> = {};
-  transaksiHarian.forEach((t) => {
-    paymentMethods[t.metode_bayar] =
-      (paymentMethods[t.metode_bayar] || 0) + t.total;
-  });
-
+  const maxTotal = Math.max(...penjualan7Hari.map((d: any) => d.total), 1);
+  const maxQty = Math.max(...menuTerlaris.map((m: any) => m.qty), 1);
   const totalMetode = Object.values(paymentMethods).reduce(
-    (sum, v) => sum + v,
+    (sum: number, v: any) => sum + v,
     0,
   );
 
@@ -122,30 +81,28 @@ export default function DashboardPage() {
         {[
           {
             title: "Penjualan Hari Ini",
-            value: formatRupiah(totalPenjualan),
+            value: formatRupiah(penjualanHariIni),
             icon: "💰",
             color: "from-emerald-600 to-emerald-900",
-            change: "+" + totalPenjualan,
+            change: "+" + penjualanHariIni,
           },
           {
             title: "Transaksi",
-            value: jumlahTransaksi.toString(),
+            value: jumlahTransaksiHariIni.toString(),
             icon: "🧾",
             color: "from-blue-600 to-blue-900",
             change: "transaksi",
           },
           {
             title: "Menu Tersedia",
-            value: menu
-              .filter((m: any) => m.status === "Tersedia")
-              .length.toString(),
+            value: menuTersedia.toString(),
             icon: "🍽️",
             color: "from-amber-600 to-amber-900",
             change: "menu",
           },
           {
             title: "Total Menu",
-            value: menu.length.toString(),
+            value: totalMenu.toString(),
             icon: "📋",
             color: "from-purple-600 to-purple-900",
             change: "item",
@@ -184,7 +141,7 @@ export default function DashboardPage() {
             </h2>
           </div>
           <div className="flex items-end gap-2 h-40">
-            {last7Days.map((day, idx) => {
+            {penjualan7Hari.map((day: any, idx: number) => {
               const height = maxTotal > 0 ? (day.total / maxTotal) * 100 : 0;
               return (
                 <div
@@ -230,7 +187,7 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {/* Visual bars */}
               <div className="space-y-3">
-                {Object.entries(paymentMethods).map(([method, total]) => {
+                {Object.entries(paymentMethods).map(([method, total]: any) => {
                   const pct = (total / totalMetode) * 100;
                   const colors: Record<string, string> = {
                     Tunai: "from-green-500 to-emerald-600",
@@ -273,7 +230,7 @@ export default function DashboardPage() {
               Menu Terlaris
             </h2>
           </div>
-          {topMenu.length === 0 ? (
+          {menuTerlaris.length === 0 ? (
             <div className="text-center py-10">
               <span className="text-4xl mb-2 block">📊</span>
               <p className="text-angkringan-light/40">
@@ -282,7 +239,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {topMenu.map((item, idx) => {
+              {menuTerlaris.map((item: any, idx: number) => {
                 const barWidth = (item.qty / maxQty) * 100;
                 const medals = ["🥇", "🥈", "🥉"];
                 const rank = idx < 3 ? medals[idx] : `#${idx + 1}`;
@@ -334,33 +291,28 @@ export default function DashboardPage() {
             {[
               {
                 label: "Total Pendapatan",
-                value: formatRupiah(transaksi.reduce((s, t) => s + t.total, 0)),
+                value: formatRupiah(ringkasan.totalPendapatan),
                 icon: "💰",
                 color: "text-emerald-400",
               },
               {
                 label: "Total Transaksi",
-                value: transaksi.length.toString(),
+                value: ringkasan.totalTransaksi.toString(),
                 icon: "🧾",
                 color: "text-blue-400",
               },
               {
                 label: "Rata-rata per Transaksi",
                 value:
-                  transaksi.length > 0
-                    ? formatRupiah(
-                        Math.round(
-                          transaksi.reduce((s, t) => s + t.total, 0) /
-                            transaksi.length,
-                        ),
-                      )
+                  ringkasan.totalTransaksi > 0
+                    ? formatRupiah(ringkasan.rataRata)
                     : "Rp 0",
                 icon: "📊",
                 color: "text-purple-400",
               },
               {
                 label: "Menu Terlaris",
-                value: topMenu[0]?.nama || "-",
+                value: menuTerlaris[0]?.nama || "-",
                 icon: "🏆",
                 color: "text-yellow-400",
               },
@@ -393,13 +345,13 @@ export default function DashboardPage() {
           <h2 className="text-lg font-bold text-angkringan-gold">
             Transaksi Terbaru
           </h2>
-          {transaksiHarian.length > 0 && (
+          {transaksiTerbaru.length > 0 && (
             <span className="badge bg-angkringan-accent/20 text-angkringan-accent border border-angkringan-accent/30 ml-auto text-xs">
-              {jumlahTransaksi} hari ini
+              {jumlahTransaksiHariIni} hari ini
             </span>
           )}
         </div>
-        {transaksi.length === 0 ? (
+        {transaksiTerbaru.length === 0 ? (
           <div className="text-center py-10">
             <span className="text-4xl mb-2 block">🛒</span>
             <p className="text-angkringan-light/40">Belum ada transaksi</p>
@@ -416,7 +368,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {transaksi.slice(0, 10).map((t: any) => (
+                {transaksiTerbaru.map((t: any) => (
                   <tr
                     key={t.id}
                     className="border-b border-angkringan-primary/10 hover:bg-angkringan-primary/10 transition-all"

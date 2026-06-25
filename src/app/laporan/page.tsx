@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  getTransaksi,
+  getTransaksiOptimized,
   getUsers,
   formatRupiah,
   formatTanggalShort,
@@ -51,38 +51,25 @@ export default function LaporanPage() {
     loadData();
   }, [dateStart, dateEnd]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [dbTransaksi, dbUsers] = await Promise.all([
-        fetch("/api/transaksi").then((res) => res.json()),
+        getTransaksiOptimized({
+          dateStart,
+          dateEnd,
+          limit: 2000,
+        }),
         getUsers(),
       ]);
 
       setUsers(dbUsers);
-
-      const start = new Date(dateStart);
-      start.setHours(0, 0, 0, 0);
-
-      const end = new Date(dateEnd);
-      end.setHours(23, 59, 59, 999);
-
-      const filtered = (dbTransaksi as Transaksi[]).filter((t) => {
-        const tgl = new Date(t.tanggal);
-        return tgl >= start && tgl <= end;
-      });
-
-      setTransaksiList(
-        filtered.sort(
-          (a, b) =>
-            new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime(),
-        ),
-      );
+      setTransaksiList(dbTransaksi);
     } catch (error) {
       console.error("Gagal mengambil data transaksi:", error);
       setTransaksiList([]);
       setUsers([]);
     }
-  };
+  }, [dateStart, dateEnd]);
 
   const totalPenjualan = transaksiList.reduce((sum, t) => sum + t.total, 0);
   const totalTransaksi = transaksiList.length;

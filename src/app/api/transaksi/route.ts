@@ -8,11 +8,54 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const periode = searchParams.get("periode") || "all";
+    const dateStart = searchParams.get("date_start");
+    const dateEnd = searchParams.get("date_end");
+    const limit = parseInt(searchParams.get("limit") || "0", 10);
 
-    let sql = "SELECT * FROM transaksi ORDER BY tanggal DESC";
+    let sql = `
+      SELECT 
+        t.id,
+        t.tanggal,
+        t.total,
+        t.diskon,
+        t.pajak,
+        t.metode_bayar,
+        t.user_id,
+        t.customer_name AS "customerName",
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', d.id,
+              'transaksi_id', d.transaksi_id,
+              'menu_id', d.menu_id,
+              'nama_menu', d.nama_menu,
+              'qty', d.qty,
+              'harga', d.harga,
+              'subtotal', d.subtotal
+            ) ORDER BY d.id
+          ) FILTER (WHERE d.id IS NOT NULL),
+          '[]'::json
+        ) AS items
+      FROM transaksi t
+      LEFT JOIN detail_transaksi d ON d.transaksi_id = t.id
+    `;
     const params: any[] = [];
+    const conditions: string[] = [];
 
-    if (periode !== "all") {
+    // Date range filtering (priority over periode)
+    if (dateStart) {
+      conditions.push(`t.tanggal >= $${params.length + 1}::timestamp`);
+      params.push(formatDateForDB(new Date(dateStart).toISOString()));
+    }
+    if (dateEnd) {
+      conditions.push(`t.tanggal <= $${params.length + 1}::timestamp`);
+      // Set to end of day
+      const endDate = new Date(dateEnd);
+      endDate.setHours(23, 59, 59, 999);
+      params.push(formatDateForDB(endDate.toISOString()));
+    }
+
+    if (conditions.length === 0 && periode !== "all") {
       const now = new Date();
       let startDate: Date;
       if (periode === "harian") {
@@ -22,20 +65,22 @@ export async function GET(request: Request) {
       } else {
         startDate = new Date(now.getTime() - 30 * 86400000);
       }
-      sql = "SELECT * FROM transaksi WHERE tanggal >= $1 ORDER BY tanggal DESC";
+      conditions.push(`t.tanggal >= $${params.length + 1}::timestamp`);
       params.push(formatDateForDB(startDate.toISOString()));
     }
 
-    const transaksi: any = await query(sql, params);
-
-    for (let t of transaksi) {
-      const details: any = await query(
-        "SELECT * FROM detail_transaksi WHERE transaksi_id = $1 AND is_deleted = false",
-        [t.id],
-      );
-      t.items = details;
-      t.customerName = t.customer_name || t.customerName || null;
+    if (conditions.length > 0) {
+      sql += " WHERE " + conditions.join(" AND ");
     }
+
+    sql += " GROUP BY t.id ORDER BY t.tanggal DESC";
+
+    if (limit > 0) {
+      sql += ` LIMIT $${params.length + 1}`;
+      params.push(limit);
+    }
+
+    const transaksi: any = await query(sql, params);
 
     return Response.json(transaksi);
   } catch (error) {
