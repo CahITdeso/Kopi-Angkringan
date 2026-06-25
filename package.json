@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@vercel/speed-insights": "^2.0.0",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.0",
     "mysql2": "^3.22.3",
