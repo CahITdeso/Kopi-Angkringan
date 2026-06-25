@@ -33,3 +33,6 @@ export async function softDelete(table: string, id: string): Promise<void> {
     console.warn(`Soft delete ke ${table} gagal:`, error);
   }
 }
+export const generateId = (prefix = "") => {
+  return prefix + Date.now().toString();
+};
