@@ -403,7 +403,9 @@ export default function MenuPage() {
                     // MODE KONFIRMASI HAPUS INLINE
                     <div className="flex items-center gap-1 flex-1">
                       <span className="text-xs text-red-400">
-                        Hapus &ldquo;{k.nama}&rdquo;?
+                        Hapus {'"'}
+                        {k.nama}
+                        {'"'}?
                       </span>
                       <button
                         onClick={() => executeDeleteKat(k.id)}
