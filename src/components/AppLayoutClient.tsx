@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 
@@ -10,6 +11,8 @@ export default function AppLayoutClient({
   children: React.ReactNode;
 }) {
   const { user, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (!user) {
@@ -23,6 +26,13 @@ export default function AppLayoutClient({
         </div>
       );
     }
+
+    // If not on login page, redirect to login
+    if (pathname !== "/login") {
+      router.replace("/login");
+      return null;
+    }
+
     return <>{children}</>;
   }
 
